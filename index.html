@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentBadge — a free soulbound badge for Agent ID holders</title>
+<meta name="description" content="Mint one free soulbound badge if you hold an Agent ID. Check in daily to grow your streak. No rewards, no returns, no promises.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230b1020'/%3E%3Ccircle cx='50' cy='38' r='18' fill='none' stroke='%23f5c542' stroke-width='5'/%3E%3Ctext x='50' y='46' font-family='sans-serif' font-size='22' fill='%23f5c542' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="wordmark" href="#" aria-label="AgentBadge home">Agent<span>Badge</span></a>
+    <button id="connectBtn" class="btn btn-gold" type="button">Connect wallet</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Hero: the badge art is the visual. -->
+  <section class="hero" aria-label="About AgentBadge">
+    <div class="hero-copy">
+      <h1 class="hero-title">A free badge for Agent&nbsp;ID holders.</h1>
+      <p class="hero-sub">Mint one soulbound badge. Check in once a day to grow your streak. That is all it does — no rewards, no returns, no promises.</p>
+      <dl class="stats" aria-label="Live statistics">
+        <div class="stat">
+          <dt>Badges minted</dt>
+          <dd id="statMinted" aria-live="polite">…</dd>
+        </div>
+        <div class="stat">
+          <dt>Check-ins</dt>
+          <dd id="statCheckins" aria-live="polite">…</dd>
+        </div>
+        <div class="stat">
+          <dt>Latest badge</dt>
+          <dd id="statLatest" aria-live="polite">…</dd>
+        </div>
+      </dl>
+      <p id="statsNote" class="stats-note" hidden></p>
+    </div>
+    <figure class="hero-badge">
+      <div class="badge-frame" id="heroBadgeFrame">
+        <!-- Preview art (same design as the on-chain generator). Replaced by
+             the real Badge #1 artwork once it loads from the chain. -->
+        <svg id="heroPreview" viewBox="0 0 400 400" role="img" aria-label="Preview of an AgentBadge">
+          <rect width="400" height="400" rx="48" fill="#0b1020"/>
+          <circle cx="200" cy="150" r="70" fill="none" stroke="#f5c542" stroke-width="6"/>
+          <text x="200" y="168" font-family="sans-serif" font-size="52" fill="#f5c542" text-anchor="middle">A</text>
+          <text x="200" y="260" font-family="sans-serif" font-size="34" fill="#ffffff" text-anchor="middle">AGENT BADGE</text>
+          <text x="200" y="300" font-family="sans-serif" font-size="24" fill="#9aa4b2" text-anchor="middle">#–</text>
+          <text x="200" y="345" font-family="sans-serif" font-size="24" fill="#7ee787" text-anchor="middle">STREAK – DAYS</text>
+        </svg>
+        <img id="heroBadgeImg" alt="" hidden>
+      </div>
+      <figcaption id="heroCaption">Badge preview — the artwork lives entirely on-chain.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Your badge: connect, mint, check in, burn. -->
+  <section class="panel" id="accountPanel" aria-label="Your badge">
+    <h2>Your badge</h2>
+
+    <div id="accountEmpty" class="account-state">
+      <p>Connect your wallet to see your badge, your streak, and what you can do next.</p>
+      <button class="btn btn-gold" type="button" data-connect>Connect wallet</button>
+      <p class="fine">This site only talks to the wallet extension already in your browser. It never asks for a password, a seed phrase, or any credential.</p>
+    </div>
+
+    <div id="accountWrongChain" class="account-state" hidden>
+      <p>Your wallet is on the wrong network. AgentBadge lives on chain 56.</p>
+      <button id="switchChainBtn" class="btn btn-gold" type="button">Switch to chain 56</button>
+      <p class="fine">Switching opens a prompt in your wallet. Nothing is sent until you confirm it there.</p>
+    </div>
+
+    <div id="accountReady" class="account-state" hidden>
+      <p class="addr-line">Connected as <span id="accountAddr" class="mono"></span></p>
+      <p id="agentIdStatus" class="status-line" aria-live="polite"></p>
+
+      <!-- No badge yet -->
+      <div id="noBadge" hidden>
+        <p id="mintPitch">You hold an Agent ID. Your badge is free — you only pay the network gas fee.</p>
+        <button id="mintBtn" class="btn btn-gold" type="button">Mint your badge</button>
+        <p class="fine">Minting opens a transaction in your wallet. Nothing is sent until you confirm it there.</p>
+      </div>
+
+      <!-- Has a badge -->
+      <div id="hasBadge" hidden>
+        <div class="badge-row">
+          <img id="badgeImg" class="badge-art" alt="">
+          <div class="badge-facts">
+            <p class="badge-title" id="badgeTitle"></p>
+            <dl class="facts">
+              <div><dt>Current streak</dt><dd id="factStreak"></dd></div>
+              <div><dt>Longest streak</dt><dd id="factLongest"></dd></div>
+              <div><dt>Minted</dt><dd id="factMinted"></dd></div>
+              <div><dt>Last check-in</dt><dd id="factLast"></dd></div>
+            </dl>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="checkinBtn" class="btn btn-green" type="button">Check in today</button>
+          <button id="burnBtn" class="btn btn-ghost-danger" type="button">Burn badge</button>
+        </div>
+        <div id="burnConfirm" class="burn-confirm" hidden>
+          <p><strong>Burn <span id="burnTokenLabel"></span>?</strong> This cannot be undone. Your streak is lost, and you would mint a fresh badge with a new number if you come back.</p>
+          <div class="actions">
+            <button id="burnConfirmBtn" class="btn btn-danger" type="button">Yes, burn it</button>
+            <button id="burnCancelBtn" class="btn btn-ghost" type="button">Keep my badge</button>
+          </div>
+        </div>
+      </div>
+
+      <p id="accountStatus" class="tx-status" aria-live="polite" hidden></p>
+    </div>
+  </section>
+
+  <!-- Read-only lookup: no wallet needed. -->
+  <section class="panel" id="lookupPanel" aria-label="Look up a badge">
+    <h2>Look up any badge</h2>
+    <p>No wallet needed. Paste an address to see its badge and streak.</p>
+    <form id="lookupForm" class="lookup-form">
+      <label class="visually-hidden" for="lookupInput">Address to look up</label>
+      <input id="lookupInput" class="mono" type="text" inputmode="text" autocomplete="off" spellcheck="false"
+             placeholder="0x…" aria-describedby="lookupHelp">
+      <button class="btn btn-gold" type="submit">Look up</button>
+    </form>
+    <p id="lookupHelp" class="fine">An address is public information. This lookup only reads the chain.</p>
+    <div id="lookupResult" class="lookup-result" hidden>
+      <div class="badge-row">
+        <img id="lookupImg" class="badge-art" alt="">
+        <div class="badge-facts">
+          <p class="badge-title" id="lookupTitle"></p>
+          <dl class="facts">
+            <div><dt>Current streak</dt><dd id="lookupStreak"></dd></div>
+            <div><dt>Longest streak</dt><dd id="lookupLongest"></dd></div>
+            <div><dt>Minted</dt><dd id="lookupMinted"></dd></div>
+            <div><dt>Last check-in</dt><dd id="lookupLast"></dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <p id="lookupEmpty" class="status-line" hidden></p>
+  </section>
+
+  <!-- How it works: a real sequence, so numbering is earned. -->
+  <section class="panel steps" aria-label="How it works">
+    <h2>How it works</h2>
+    <ol class="steps-list">
+      <li>
+        <span class="step-num" aria-hidden="true">1</span>
+        <div>
+          <h3>Connect a wallet that holds an Agent ID</h3>
+          <p>Only Agent ID holders can mint. The contract checks the registry on-chain at mint time.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num" aria-hidden="true">2</span>
+        <div>
+          <h3>Mint your free badge</h3>
+          <p>One badge per address. It is soulbound: it can never be transferred or sold, only burned by you.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num" aria-hidden="true">3</span>
+        <div>
+          <h3>Check in daily to grow your streak</h3>
+          <p>One check-in per UTC day. Consecutive days grow the streak; a missed day resets it to 1.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- The fine print: honest copy. -->
+  <section class="panel fine-print" aria-label="The fine print">
+    <h2>The fine print</h2>
+    <ul>
+      <li><strong>Free.</strong> Minting costs nothing but the network gas fee. The contract can never hold funds.</li>
+      <li><strong>Soulbound.</strong> The badge cannot be transferred, sold, or approved. Burn it any time to free your address to mint again.</li>
+      <li><strong>No rewards.</strong> The badge pays nothing and promises nothing. It is a participation marker, not an investment.</li>
+      <li><strong>No owner.</strong> The contract has no admin, no pause switch, and no way to change the rules after deployment.</li>
+      <li><strong>Community project.</strong> Not affiliated with any wallet, exchange, or chain operator.</li>
+    </ul>
+    <p class="contract-lines">
+      Badge contract
+      <a id="contractLink" class="mono" href="https://bscscan.com/address/0xBe7754680b10Eac76bc7Bb88c71A900f7eD3d9B1" target="_blank" rel="noopener">0xBe7754680b10Eac76bc7Bb88c71A900f7eD3d9B1</a><br>
+      Agent ID registry
+      <a class="mono" href="https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" target="_blank" rel="noopener">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</a>
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>This page runs entirely in your browser. It reads the chain through public endpoints and never sees your keys.</p>
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.1/dist/gsap.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
